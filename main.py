@@ -1,16 +1,13 @@
 import telebot
 from telebot import types
+from book import Book
 
 bot = telebot.TeleBot('5760407234:AAFuJAKQPlq1nSgS028nzi6MSojBppqCkTY')
 golos = 0
-author = ''
-bookName = ''
-numOfPages = 0
-anotation = ''
-description = ''
-genre = ''
+
 prov = False
 
+n1 = Book(bot)
 
 @bot.message_handler(content_types=['text'])
 def start(message):
@@ -18,9 +15,7 @@ def start(message):
         bot.send_message(message.from_user.id, "В какое голосование добавляем?")
         bot.register_next_step_handler(message, num_golos)
     elif message.text == '/book':
-        bot.send_message(message.from_user.id, 'Подведем итог:\n' + 'Голосование: #' + str(
-            golos) + 'я\n' + '1)Автор: ' + author + '\n2)Название книги: ' + bookName + '\n3)Жанр книги: ' + genre + '\n4)Количество страниц: ' + str(
-            numOfPages) + '\n5)Ссылка на описание: ' + description + '\n6)Анотация: ' + anotation + '\n\nВсё верно?')
+        n1.itog(message, golos)
     else:
         bot.send_message(message.from_user.id, "Напиши /reg")
 
@@ -43,36 +38,33 @@ def num_golos(message):
 
 
 def get_author(message):
-    global author
-    author = message.text
+    n1.setAuthor(message.text)
     bot.send_message(message.from_user.id, 'Какое название у книги?')
     bot.register_next_step_handler(message, get_book);
 
 
 def get_book(message):
-    global bookName
-    bookName = message.text
+    n1.setBookName(message.text)
     bot.send_message(message.from_user.id, 'Какой жанр у твоей книги?')
     bot.register_next_step_handler(message, get_genre)
 
 
 def get_genre(message):
-    global genre
-    genre = message.text
+    n1.setGenre(message.text)
     bot.send_message(message.from_user.id, 'Сколько в ней страниц?')
     bot.register_next_step_handler(message, get_pages)
 
 
 def get_pages(message):
-    global numOfPages, prov
+    global prov
     prov = False
-    numOfPages = 0
+    n1.setNumOfPages(0)
     try:
-        numOfPages = int(message.text)
-        prov = (numOfPages != 0)
+        n1.setNumOfPages(message.text)
+        prov = (n1.numOfPages != 0)
     except Exception:
         bot.send_message(message.from_user.id, 'Цифрами, пожалуйста')
-    if prov and (int(numOfPages) > 0):
+    if prov and (int(n1.numOfPages) > 0):
         bot.send_message(message.from_user.id, 'А теперь дай ссылку на описание')
         bot.register_next_step_handler(message, get_description)
     else:
@@ -81,24 +73,20 @@ def get_pages(message):
 
 
 def get_description(message):
-    global description
-    description = message.text
+    n1.setDescription(message.text)
     bot.send_message(message.from_user.id, 'Введи краткую анотацию')
     bot.register_next_step_handler(message, get_anotation)
 
 
 def get_anotation(message):
-    global anotation
-    anotation = message.text
-    question = 'Подведем итог:\n' + 'Голосование: #' + str(
-        golos) + 'я\n' + '1)Автор: ' + author + '\n2)Название книги: ' + bookName + '\n3)Жанр книги: ' + genre + '\n4)Количество страниц: ' + str(
-        numOfPages) + '\n5)Ссылка на описание: ' + description + '\n6)Анотация: ' + anotation + '\n\nВсё верно?'
+    n1.setAnotation(message.text)
+    n1.itog(message)
     keyboard = types.InlineKeyboardMarkup()
     key_yes = types.InlineKeyboardButton(text='Да', callback_data='yes')
     keyboard.add(key_yes)
     key_no = types.InlineKeyboardButton(text='Нет', callback_data='no')
     keyboard.add(key_no)
-    bot.send_message(message.from_user.id, text=question, reply_markup=keyboard)
+    bot.send_message(message.from_user.id, text='Всё верно?', reply_markup=keyboard)
 
 
 @bot.callback_query_handler(func=lambda call: True)
@@ -107,6 +95,7 @@ def callback_worker(call):
         bot.send_message(call.from_user.id, "Значит отправляем")
     elif call.data == "no":
         bot.send_message(call.from_user.id, "Давайте исправим")
+        bot.send_message(call.from_user.id, "Напиши /reg")
     else:
         bot.send_message(call.from_user.id, "Я вас не понял")
         bot.register_next_step_handler(call, get_conf)

@@ -2,7 +2,7 @@ import telebot
 from telebot import types
 from book import Book
 
-bot = telebot.TeleBot('5760407234:AAFuJAKQPlq1nSgS028nzi6MSojBppqCkTY')
+bot = telebot.TeleBot('#####')
 golos = 0
 
 prov = False
